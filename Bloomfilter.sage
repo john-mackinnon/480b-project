@@ -128,6 +128,12 @@ class Bloomfilter(object):
         return
         
     def expectedFp(self):
+        """
+        Returns the expected false-positive rate for membership testing in self. This rate is calculated by ________.  Note that this value is based on the size of the underlying bit vector, the number of set bits, and the number of hash functions used for the filter.  For the pure size of the vector, or number of set bits, see getVectorSize and getLoadFactor.
+        
+        OUTPUT:
+            a decimal, the expected rate of false positivies for self
+        """
         return
     
    """ 
