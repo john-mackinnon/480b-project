@@ -24,7 +24,10 @@ class Bloomfilter(object):
         self.max_fp_rate = max_fp_rate
         
     def __repr__(self):
-        return
+        """
+        Returns a string representing self's underlying bit vector. This is potentially a really awful idea.
+        """
+        return repr(self.bits)
         
     def __eq__(self, other):
         return
@@ -56,5 +59,8 @@ class Bloomfilter(object):
    """ 
     TODO:
         * pickling
+        * testing
+    Questions:
         * membershipTest vs. contains?
+        * representation?
    """
