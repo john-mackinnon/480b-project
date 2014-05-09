@@ -87,6 +87,12 @@ class Bloomfilter(object):
         return
 
     def getVectorSize(self):
+        """
+        Returns the size of the underlying bit vector.
+        
+        OUTPUT:
+            an integer, representing the total number of buckets in self's underlying bit vector
+        """
         return
         
     def __copy__(self):
