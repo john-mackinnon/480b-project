@@ -30,6 +30,15 @@ class Bloomfilter(object):
         return repr(self.bits)
         
     def __eq__(self, other):
+        """
+        Checks for equality between other and self.  Returns true if and only if other is an instance of Bloomfilter, with the same allowed false positive rate, and the exact same bit vector state; otherwise false.
+        
+        INPUT:
+            -other -- a Bloomfilter, to test equality with self
+        
+        OUTPUT:
+            a boolean, indicating equality of self and other
+        """
         return
         
     def __ne__(self, other):
@@ -60,6 +69,8 @@ class Bloomfilter(object):
     TODO:
         * pickling
         * testing
+        * BETTER (any?) hash functions
+            * number of hash functions
     Questions:
         * membershipTest vs. contains?
         * representation?
