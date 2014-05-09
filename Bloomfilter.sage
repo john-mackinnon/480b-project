@@ -6,8 +6,22 @@ class Bloomfilter(object):
     
     Further, note that due to the bit vector representation, intersection, difference, symmetric difference are all meaningless in the context of a Bloomfilter.  As such, only insertion and union operations are the only possible set behaviors, in addition to membership testing.
     """
-    def __init__(self, iterable=None, num_bits=100, max_fp_rate=0.25):
-        return
+    def __init__(self, iterable=None, size=100, max_fp_rate=0.25):
+        """
+        Initializes a Bloomfilter, either as an empty bit vector of the given size, or containing the elements in the given iterable, if one is provided.
+        
+        INPUT:
+            -iterable -- an iterable collection, from which all elements will be initially added to the filter
+            -size -- the size of the underlying bit vector to be used for the filter
+            -max_fp_rate -- the maximum allowable rate of estimated false positives
+        """
+        if (iterable != None):
+            #TODO: make capacity appropriate to iterable's size and max_fp_rate
+            #TODO: try-catch initialization of the Bitset; better to throw a more localized exception than Bitset's
+            self.bits = Bitset(iterable, capacity=size)
+        else:
+            self.bits = Bitset(capacity=size)
+        self.max_fp_rate = max_fp_rate
         
     def __repr__(self):
         return
