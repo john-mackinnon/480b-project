@@ -67,7 +67,7 @@ class Bloomfilter(object):
         
     def add(self, n):
         """
-        Inserts elemnet n into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing n for membership.
+        Inserts element n into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing n for membership.
         
         INPUT:
             -n -- an object, to add to sel
@@ -75,6 +75,15 @@ class Bloomfilter(object):
         return
         
     def union(self, other):
+        """
+        Returns a new Bloomfliter representing the union of the underlying bit vectors for self, and another Bloomfilter.  This is semantically equivalent to taking the union of the member sets of the two filters, as any element that is a member of one will also be a member of the resulting Bloomfilter.
+        
+        INPUT:
+            -other -- a Bloomfilter, to union with self
+            
+        OUTPUT:
+            a Bloomfilter, the union of other and self
+        """
         return
 
     def getVectorSize(self):
