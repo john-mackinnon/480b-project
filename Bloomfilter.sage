@@ -107,9 +107,24 @@ class Bloomfilter(object):
         return
         
     def __copy__(self):
+        """
+        Returns a shallow copy of self.  Note that the underlying bit vector in the returned copy is simply a reference to the vector in self, so changes to one will affect the other.
+        
+        OUTPUT:
+            a Bloomfilter, the shallow copy of self
+        """
         return
     
     def __deepcopy__(self, memodict={}):
+        """
+        Returns a deep copy of self. 
+       
+        INPUT:
+            -memodict -- a dictionary, standard memoization dictionary for faster copying; should be left to the default value of {} when using deepcopy
+       
+        OUTPUT:
+            a Bloomfilter, the deep copy of self
+        """
         return
         
     def expectedFp(self):
