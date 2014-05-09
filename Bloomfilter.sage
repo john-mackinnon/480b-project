@@ -55,7 +55,7 @@ class Bloomfilter(object):
     
     def __contains__(self, n):
         """
-        Tests for possible membership of the object n in self.  Note that "true" only means n is probabilistically a member of self, though this may not be the case.
+        Tests for possible membership of the object n in self.  Note that "true" only means n is probabilistically a member of self, though this may not be the case; a "false", however, indicates with absolute certainty that n is not a member of self.
         
         INPUT:
             -n -- an object, to test for membership in self
@@ -65,7 +65,13 @@ class Bloomfilter(object):
         """
         return
         
-    def insert(self, n):
+    def add(self, n):
+        """
+        Inserts elemnet n into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing n for membership.
+        
+        INPUT:
+            -n -- an object, to add to sel
+        """
         return
         
     def union(self, other):
