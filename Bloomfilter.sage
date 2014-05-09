@@ -54,6 +54,15 @@ class Bloomfilter(object):
         return 
     
     def __contains__(self, n):
+        """
+        Tests for possible membership of the object n in self.  Note that "true" only means n is probabilistically a member of self, though this may not be the case.
+        
+        INPUT:
+            -n -- an object, to test for membership in self
+            
+        OUTPUT:
+            a boolean, indicating if n is possibly a member of self
+        """
         return
         
     def insert(self, n):
