@@ -94,6 +94,17 @@ class Bloomfilter(object):
             an integer, representing the total number of buckets in self's underlying bit vector
         """
         return
+    
+    def getLoadFactor(self):
+        """
+        Returns the load factor of the underlying bit vector.  This is the number of set bits in the vector, divided by the size of the vector (i.e. the fraction of the vector with set bits).
+        
+        Note that the expectedFp function returns a more descriptive statistic (i.e. how often you may expect false positives), but the load factor returns a value that is completely independent of the number of hash functions used.
+        
+        OUTPUT:
+            a decimal, the number of set bits in the underlying bit vector, divided by the total size of the vector
+        """
+        return
         
     def __copy__(self):
         return
