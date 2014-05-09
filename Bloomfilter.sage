@@ -31,7 +31,7 @@ class Bloomfilter(object):
         
     def __eq__(self, other):
         """
-        Checks for equality between other and self.  Returns true if and only if other is an instance of Bloomfilter, with the same allowed false positive rate, and the exact same bit vector state; otherwise false.
+        Checks for equality between other and self.  Returns true if and only if other is an instance of Bloomfilter, with the same allowed false positive rate, and the exact same bit vector state as self; otherwise false.
         
         INPUT:
             -other -- a Bloomfilter, to test equality with self
@@ -42,6 +42,15 @@ class Bloomfilter(object):
         return
         
     def __ne__(self, other):
+        """
+        Checks for non-equality between other and self.  Returns false if and only if other is an instance of Bloomfilter, with the same allowed false positive rate, and exact same bit vector state as self; otherwise true.
+        
+        INPUT:
+            -other -- a Bloomfilter, to test non-equality with self
+            
+        OUTPUT:
+            a boolean, indicating non-equliaty of self and other
+        """
         return 
     
     def __contains__(self, n):
