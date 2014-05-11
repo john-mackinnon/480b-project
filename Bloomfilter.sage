@@ -39,7 +39,11 @@ class Bloomfilter(object):
         OUTPUT:
             a boolean, indicating equality of self and other
         """
-        return
+        if isinstance(other, Bloomfilter):
+            return (self.bits == other.bits) and 
+                   (self.max_fp_rate == other.max_fp_rate)
+        else:
+            return NotImplemented
         
     def __ne__(self, other):
         """
