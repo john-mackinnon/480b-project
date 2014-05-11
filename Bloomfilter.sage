@@ -112,7 +112,7 @@ class Bloomfilter(object):
         OUTPUT:
             a decimal, the number of set bits in the underlying bit vector, divided by the total size of the vector
         """
-        return
+        return sum([1 for _ in self.bits]) / self.size
         
     def __copy__(self):
         """
