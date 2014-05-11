@@ -84,7 +84,7 @@ class Bloomfilter(object):
         
     def union(self, other):
         """
-        Returns a new Bloomfliter representing the union of the underlying bit vectors for self, and another Bloomfilter.  This is semantically equivalent to taking the union of the member sets of the two filters, as any element that is a member of one will also be a member of the resulting Bloomfilter.
+        Returns a new Bloomfliter representing the union of the underlying bit vectors for self, and another Bloomfilter, with the same max false positive rate and capacity as self.  This is semantically equivalent to taking the union of the member sets of the two filters, as any element that is a member of one will also be a member of the resulting Bloomfilter.
         
         INPUT:
             -other -- a Bloomfilter, to union with self
@@ -101,7 +101,7 @@ class Bloomfilter(object):
         OUTPUT:
             an integer, representing the total number of buckets in self's underlying bit vector
         """
-        return
+        return self.size
     
     def getLoadFactor(self):
         """
