@@ -1,3 +1,5 @@
+import mmh3
+
 class Bloomfilter(object):
     """
     A Bloomfilter is a probabilistic data structure used for membership testing.  Objects added to a Bloomfilter are not actually stored in the filter; rather, each added object is hashed several times, and the corresponding bits are set in a bit vector.  When an object is tested for membership, it is hashed by the same hash functions, and the resulting bits are checked in the bit vector.  If all corresponding bits are set, it is said that the element "may" have been added to the filter; if at least one of the bits is not set, however, it is definitely the case that the object is not a member of the filter.  Note that, in this way, a Bloomfilter may return false positives for membership testing, but will never produce false negatives.  That is, a Bloomfilter should be used when it is desirable to know with some degree of certainty that an object "might" be a member, and with absolute certainty that an object is not a member.
@@ -43,7 +45,8 @@ class Bloomfilter(object):
         """
         if isinstance(other, Bloomfilter):
             return (self.bits == other.bits) and 
-                   (self.max_fp_rate == other.max_fp_rate)
+                   (self.max_fp_rate == other.max_fp_rate) and
+                   (self.hash_count = other.hash_count)
         else:
             return NotImplemented
         
@@ -59,7 +62,8 @@ class Bloomfilter(object):
         """
         if isinstance(other, Bloomfilter):
             return (self.bits != other.bits) or
-                   (self.max_fp_rate != other.max_fp_rate)
+                   (self.max_fp_rate != other.max_fp_rate) or
+                   (self.hash_count != other.hash_count)
         else:
             return NotImplemented
     
