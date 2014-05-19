@@ -1,4 +1,4 @@
-import mmh3
+import mmh3 
 
 class Bloomfilter(object):
     """
@@ -77,6 +77,8 @@ class Bloomfilter(object):
         OUTPUT:
             a boolean, indicating if n is possibly a member of self
         """
+        if not isinstance(s, string):
+            raise TypeError("Bloomfilters may only test strings for membership")
         for i in self.hash_count:
             hash_val = mmh3.hash(s,i) % self.size
             if not hash_val in self.bits:
@@ -90,6 +92,8 @@ class Bloomfilter(object):
         INPUT:
             -s -- a string, to add to self
         """
+        if not isinstance(s, string):
+            raise TypeError("Bloomfilters may only add strings")
         for i in self.hash_count:
             hash_val = mmh3.hash(s,i) % self.size
             self.bits.add(hash_val)
@@ -133,7 +137,10 @@ class Bloomfilter(object):
         OUTPUT:
             a Bloomfilter, the shallow copy of self
         """
-        return
+        copy = Bloomfilter(max_fp_rate = self.max_fp_rate,
+                           hash_count = self.hash_count)
+        copy.bits = self.bits
+        return copy
     
     def __deepcopy__(self, memodict={}):
         """
@@ -145,7 +152,10 @@ class Bloomfilter(object):
         OUTPUT:
             a Bloomfilter, the deep copy of self
         """
-        return
+        copy = Bloomfilter(max_fp_rate = self.max_fp_rate,
+                           iterable = self.bits,
+                           hash_count = self.hash_count)
+        return copy
         
     def expectedFp(self):
         """
