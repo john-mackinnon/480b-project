@@ -67,26 +67,32 @@ class Bloomfilter(object):
         else:
             return NotImplemented
     
-    def __contains__(self, n):
+    def __contains__(self, s):
         """
-        Tests for possible membership of the object n in self.  Note that "true" only means n is probabilistically a member of self, though this may not be the case; a "false", however, indicates with absolute certainty that n is not a member of self.
+        Tests for possible membership of the string s in self.  Note that "true" only means s is probabilistically a member of self, though this may not be the case; a "false", however, indicates with absolute certainty that s is not a member of self.
         
         INPUT:
-            -n -- an object, to test for membership in self
+            -s -- a string, to test for membership in self
             
         OUTPUT:
             a boolean, indicating if n is possibly a member of self
         """
-        return
+        for i in self.hash_count:
+            hash_val = mmh3.hash(s,i) % self.size
+            if not hash_val in self.bits:
+                return False
+        return True
         
-    def add(self, n):
+    def add(self, s):
         """
-        Inserts element n into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing n for membership.
+        Inserts string s into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing s for membership.
         
         INPUT:
-            -n -- an object, to add to sel
+            -s -- a string, to add to self
         """
-        return
+        for i in self.hash_count:
+            hash_val = mmh3.hash(s,i) % self.size
+            self.bits.add(hash_val)
         
     def union(self, other):
         """
@@ -154,9 +160,10 @@ class Bloomfilter(object):
     TODO:
         * pickling
         * testing
-        * BETTER (any?) hash functions
-            * number of hash functions
         * re-hash boolean once FP is exceeded
+        * test efficiency in add/contains:
+            * add(n) flips the nth bit, update(set) flips all bits
+            * 'n in set' tests membership, issuperset(set) checks if all flipped
     Questions:
         * membershipTest vs. contains?
         * representation?
