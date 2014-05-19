@@ -6,7 +6,7 @@ class Bloomfilter(object):
     
     Further, note that due to the bit vector representation, intersection, difference, symmetric difference are all meaningless in the context of a Bloomfilter.  As such, only insertion and union operations are the only possible set behaviors, in addition to membership testing.
     """
-    def __init__(self, iterable=None, size=100, max_fp_rate=0.25):
+    def __init__(self, iterable=None, size=128, max_fp_rate=0.25, hash_count=4):
         """
         Initializes a Bloomfilter, either as an empty bit vector of the given size, or containing the elements in the given iterable, if one is provided.
         
@@ -14,6 +14,7 @@ class Bloomfilter(object):
             -iterable -- an iterable collection, from which all elements will be initially added to the filter
             -size -- the size of the underlying bit vector to be used for the filter
             -max_fp_rate -- the maximum allowable rate of estimated false positives
+            -hash_count -- the number of hash functions to use
         """
         if (iterable != None):
             #TODO: make capacity appropriate to iterable's size and max_fp_rate
@@ -22,6 +23,7 @@ class Bloomfilter(object):
         else:
             self.bits = Bitset(capacity=size)
         self.max_fp_rate = max_fp_rate
+        self.hash_count = hash_count
         
     def __repr__(self):
         """
@@ -150,7 +152,12 @@ class Bloomfilter(object):
         * testing
         * BETTER (any?) hash functions
             * number of hash functions
+        * re-hash boolean once FP is exceeded
     Questions:
         * membershipTest vs. contains?
         * representation?
+        * installing mmh3?
+        * what to hash?
+            * should this be general for objects, or just strings?
+        * what to do with max-fp?
    """
