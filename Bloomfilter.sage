@@ -44,9 +44,9 @@ class Bloomfilter(object):
             a boolean, indicating equality of self and other
         """
         if isinstance(other, Bloomfilter):
-            return (self.bits == other.bits) and
+            return ((self.bits == other.bits) and
                    (self.max_fp_rate == other.max_fp_rate) and
-                   (self.hash_count = other.hash_count)
+                   (self.hash_count == other.hash_count))
         else:
             return NotImplemented
 
@@ -61,9 +61,9 @@ class Bloomfilter(object):
             a boolean, indicating non-equliaty of self and other
         """
         if isinstance(other, Bloomfilter):
-            return (self.bits != other.bits) or
+            return ((self.bits != other.bits) or
                    (self.max_fp_rate != other.max_fp_rate) or
-                   (self.hash_count != other.hash_count)
+                   (self.hash_count != other.hash_count))
         else:
             return NotImplemented
 
