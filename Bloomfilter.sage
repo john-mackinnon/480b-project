@@ -31,7 +31,7 @@ class Bloomfilter(object):
         """
         Returns a string representing the given bloom filter.  The following information is included in this string: capacity of the underlying bit set, number of hash functions used, maximum allowed false-positive rate, and the underlying bitset itself.
         """
-        return "Bloomfilter(size=%i, hash count=%i, max fp rate=%d, bits=%s)" % (self.size, self.hash_count, self.max_fp_rate, repr(self.bits))
+        return "Bloomfilter(size=%i, hash_count=%i, max_fp_rate=%f, bits=%s)" % (self.bits.capacity(), self.hash_count, self.max_fp_rate, repr(self.bits))
 
     def __eq__(self, other):
         """
