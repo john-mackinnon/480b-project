@@ -24,27 +24,72 @@ class Bloomfilter(object):
             self.bits = Bitset(iterable, capacity=size)
         else:
             self.bits = Bitset(capacity=size)
+        self.size = size
         self.max_fp_rate = max_fp_rate
         self.hash_count = hash_count
 
     def __repr__(self):
         """
         Returns a string representing the given bloom filter.  The following information is included in this string: capacity of the underlying bit set, number of hash functions used, maximum allowed false-positive rate, and the underlying bitset itself.
+        
+        EXAMPLES::
+            sage: Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)            
+            Bloomfilter(size=128, hash_count=4, max_fp_rate=0.250000, bits=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
         """
-        return "Bloomfilter(size=%i, hash_count=%i, max_fp_rate=%f, bits=%s)" % (self.bits.capacity(), self.hash_count, self.max_fp_rate, repr(self.bits))
+        return "Bloomfilter(size=%i, hash_count=%i, max_fp_rate=%f, bits=%s)" % (self.size, self.hash_count, self.max_fp_rate, repr(self.bits))
 
     def __eq__(self, other):
         """
         Checks for equality between other and self.  Returns true if and only if other is an instance of bloom filter, with the same allowed false positive rate, and the exact same bit vector state as self; otherwise false.
+        
+        Note that, due to the nature of how a bloom filter stores its members (i.e. in hashed bits, rather than the members themselves), it is possible that two bloom filters with entirely different member sets could test true for equality.  Though this sense of equality may intuitively seem odd, this is intended behavior; that is, two filters may be used interchangeably a point in which their bitsets are equal, so two such filters are in fact equal.
+        
+        Further note that, in the testing of this function, the above consideration may be important if tests are failing.  That is, a test may fail simply due to bad luck with hash functions (though this is unlikely), so this possiblity should always be explored before blaming the equality function itself.
 
         INPUT:
             -other -- a bloom filter, to test equality with self
 
         OUTPUT:
             a boolean, indicating equality of self and other
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a == b
+            True
+            
+            sage: a = Bloomfilter(size=64, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a == b
+            False
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.1, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a == b
+            False
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=3)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a == b
+            False
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a.add("hello")
+            sage: b.add("hello")
+            sage: a == b
+            True
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a.add("hello")
+            sage: b.add("hi")
+            sage: a == b
+            False
         """
         if isinstance(other, Bloomfilter):
-            return ((self.bits == other.bits) and
+            return ((self.size == other.size) and
+                   (self.bits == other.bits) and
                    (self.max_fp_rate == other.max_fp_rate) and
                    (self.hash_count == other.hash_count))
         else:
@@ -53,15 +98,53 @@ class Bloomfilter(object):
     def __ne__(self, other):
         """
         Checks for non-equality between other and self.  Returns false if and only if other is an instance of bloom filter, with the same allowed false positive rate, and exact same bit vector state as self; otherwise true.
+        
+        See documentation for eq method for special notes and considerations.
 
         INPUT:
             -other -- a bloom filter, to test non-equality with self
 
         OUTPUT:
             a boolean, indicating non-equliaty of self and other
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a != b
+            False
+            
+            sage: a = Bloomfilter(size=64, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a != b
+            True
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.1, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a != b
+            True
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=3)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a != b
+            True
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a.add("hello")
+            sage: b.add("hello")
+            sage: a != b
+            False
+            
+            sage: a = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: b = Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)
+            sage: a.add("hello")
+            sage: b.add("hi")
+            sage: a != b
+            True
         """
         if isinstance(other, Bloomfilter):
-            return ((self.bits != other.bits) or
+            return ((self.size != other.size) or
+                   (self.bits != other.bits) or
                    (self.max_fp_rate != other.max_fp_rate) or
                    (self.hash_count != other.hash_count))
         else:
@@ -92,11 +175,12 @@ class Bloomfilter(object):
         INPUT:
             -s -- a string, to add to self
         """
-        if not isinstance(s, string):
-            raise TypeError("Bloomfilters may only add strings")
+        self.bits.add(hash(s) % self.size)
+        """
         for i in self.hash_count:
             hash_val = mmh3.hash(s,i) % self.size
             self.bits.add(hash_val)
+        """
 
     def union(self, other):
         """
