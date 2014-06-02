@@ -199,6 +199,36 @@ class Bloomfilter(object):
         else:
             # have a non-hashable object, cannot possibly be in filter (see add())
             return False
+        
+    def mightContain(self, n):
+        """
+        Tests for possible membership of the hashable object n in self.  Note that "true" only means n is probabilistically a member of self, though this may not be the case; a "false", however, indicates with absolute certainty that n is not a member of self.
+        
+        Further, note that the behavior of the __contains__ function is exactly identical to the mightContain() function.  This is to allow the user to use whatever style of membership testing they prefer in their code.  "x in y" syntax (from __contains__) is preferable for elegance, but "y.mightContain(x)" might provide a more clear indication that membership testing is only probabilistic.
+
+        INPUT:
+            -n -- an object, to test for membership in self
+
+        OUTPUT:
+            a boolean, indicating if n is possibly a member of self
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=0.25)
+            sage: a.add(5)
+            sage: a.mightContain(5)
+            True
+           
+            sage: a.add("skateboard")
+            sage: a.mightContain("skateboard")
+            True
+            
+            sage: a.mightContain(6)
+            False
+            
+            sage: a.mightContain(set())
+            False
+        """
+        return n in self
 
     def add(self, n):
         """
