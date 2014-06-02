@@ -6,29 +6,39 @@ class Bloomfilter(object):
     A bloom filter is a probabilistic data structure used for membership testing.  Objects added to a bloom filter are not actually stored in the filter; rather, each added object is hashed several times, and the corresponding bits are set in a bit vector.  When an object is tested for membership, it is hashed by the same hash functions, and the resulting bits are checked in the bit vector.  If all corresponding bits are set, it is said that the element "may" have been added to the filter; if at least one of the bits is not set, however, it is definitely the case that the object is not a member of the filter.  Note that, in this way, a bloom filter may return false positives for membership testing, but will never produce false negatives.  That is, a bloom filter should be used when it is desirable to know with some degree of certainty that an object "might" be a member, and with absolute certainty that an object is not a member.
 
     Note that, due to the use of a bit vector to represent the underlying data, it is not possible to retrieve the members added to a filter (nor to iterate, remove, etc.).  If retrievability is desired, or if false positives are not tolerated, a user would be better suited using the builtin set type in python.  However, these concessions allow for extremely space efficient storage (linear in the size of the bit vector), as well as fast lookup (linear in the number of hash functions used - regardless of the number of added members).  Bloomfilters are often effectively used as a pre-screening measure, with a traditional set containing all members stored on disk.
-
+    
     Further, note that due to the bit vector representation, intersection, difference, symmetric difference are all meaningless in the context of a bloom filter.  As such, only insertion and union operations are the only possible set behaviors, in addition to membership testing.
+    
+    A sample use of a Bloomfilter is for file-tree caching.  For example, a massive amount of files may be stored in a data warehouse.  A user may want to query this warehouse to see if a given file is contained.  It would be impossible to store all of the filenames in memory, and thus, they must simply be stored on disk.  Rather than having to go to disk every single time a lookup is performed (which is several orders of magnitude slower than holding the names in memory), a Bloomfilter can be used as a "pre-filter".  That is, all of the filenames can be 'stored' in the filter efficiently, and we can test for membership of filenames with high accuracy.  If a filename is indicated as "maybe present" then we will have to access the file by reading it off disk anyway.  However, if a filename is indicated as "definitely not present", then we save all of the time of checking if the file is on disk, which is a huge speedup.
+
     """
-    def __init__(self, iterable=None, size=128, max_fp_rate=0.25, hash_count=4):
+    def __init__(self, size, max_fp_rate, hash_count, iterable=None):
         """
-        Initializes a bloom filter, either as an empty bit vector of the given size, or containing the elements in the given iterable, if one is provided.
+        Initializes a new bloom filter.  If an iterable is provided, then the filter will be initialized with each of the iterable's elements as added members, otherwise the filter will be empty.
+        
+        The max_fp_rate parameter sets an upper limit for the allowed expected probability of false-positives for membership testing; upon exceeding this value, an error will be thrown by the add() function.  Thus, a larger max_fp_rate value will allow for the addition of more elements into a smaller filter, but comes at the cost of reliability of membership testing.  If a user wishes to use a bloom filter with arbitrarily poor membership-testing accuracy, a value of 1.0 can be given as the max_fp_rate (i.e. allowing for a 100% estimated probability of false-positives).
+        
+        The size parameter establishes the size of the underlying bit vector used by the bloom filter.  A larger vector will translate to a lower false-positive rate, but comes at the cost of greater memory use.  Given that the main benefit of a bloom filter is its memory efficiency, a balance must be struck in choosing the bit vector size.  If a desired false positive rate p, and the expected number of elements n that will be added to the filter are known, then the optimal size of the underlying bit vector is given by the expression -(n*ln(p))/(ln(2)^2), where ln is the natural log.  The static function optimal_size() can be used to calculate this value if n and p are known.
+        
+        The hash_count specified will determinte the number of hash functions used when adding elements and checking membership.  Choosing the optimal number of hash functions to use depends on the size of the underlying bit vector used, and the expected number of elements to be added to the filter.  If we let m be the size of the underlying bit vector, and n the expected number of elements to be added, then the optimal number of hash functions is given by the expression ln(2)*m/n, where ln is the natural log.  The static function optimal_hash_count() can be used to calculate this value if m and n are known.
+        
+        Note that once a bloom filter is created, elements may not be removed, and the filter may not be re-sized.  That is, as elements are added to the filter, it will continue to monotonically approach its maximum allowed false-positive rate.  As such, it is important to pick appropriate values for each of the necessary parameters, and to monitor the expected probability of false-positives as elements are added (which can be done via the expected_fp() function).
 
         INPUT:
             -iterable -- an iterable collection, from which all elements will be initially added to the filter
             -size -- the size of the underlying bit vector to be used for the filter
-            -max_fp_rate -- the maximum allowable rate of estimated false positives
+            -max_fp_rate -- the maximum allowable rate of expected false positives
             -hash_count -- the number of hash functions to use
         """
-        if (iterable is not None):
-            #TODO: make capacity appropriate to iterable's size and max_fp_rate
-            #TODO: try-catch initialization of the Bitset; better to throw a more localized exception than Bitset's
-            self.bits = Bitset(iterable, capacity=size)
-        else:
-            self.bits = Bitset(capacity=size)
+        self.bits = Bitset(capacity=size)
         self.size = size
         self.max_fp_rate = max_fp_rate
         self.hash_count = hash_count
         self.num_inserts = 0 # used for false-positive probability calculations
+        # add all elements if non-empty iterable is given 
+        if (iterable is not None):
+            for elmt in iterable:
+                self.add(elmt)
 
     def __repr__(self):
         """
@@ -399,7 +409,7 @@ class Bloomfilter(object):
             copy.bits.add(i)
         return copy
 
-    def expectedFp(self):
+    def expected_fp(self):
         """
         Returns the expected false-positive probability for membership testing in self. If we let k be the number of hash functions used, m be the size of self's underlying bit vector, and n b the number of elements added to self, then this rate is estimated to be (1 - e^(-kn/m))^k, where e is the base of the natural logarithm.  This probability assumes that the hash functions used are well distributed (see the add() method for more information).  Note that this value is based on the size of the underlying bit vector, the number of set bits, and the number of hash functions used for the filter; for the pure size of the vector, or number of set bits, see getVectorSize() and getLoadFactor().
         
@@ -411,7 +421,7 @@ class Bloomfilter(object):
         EXAMPLES::
             sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
             sage: a.add(4)
-            sage: a.expectedFp()
+            sage: a.expected_fp()
             (e^(-1/4) - 1)^2
         """
         return (1 - e^(-self.hash_count * self.num_inserts / self.size))^self.hash_count
