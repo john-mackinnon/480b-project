@@ -171,15 +171,28 @@ class Bloomfilter(object):
 
     def add(self, n):
         """
-        Inserts string s into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing s for membership.
+        Inserts hashable object n into self.  Note that n is not retrievable in the future (as only the bits resulting from the hash of n are retained), but, following the insertion, self will always return true when testing n for membership.
+        
+        Note that the current implementation of the hashing scheme has NOT been tested for a uniform spread for non-string objects.  That is, for strings that are added, the set of murmur hash functions is used to hash the string.  Murmur has been shown to possess good distribution over random strings, and may thus be trusted to do so for added strings in the bloom filter.  However, murmur operates on strings, and no general-purpose hash function was found that both works on any hashable object type, and allows for multiple hash functions (similar to how murmur may be seeded).  The current implementation of Bloomfilter then, uses the set of murmur hash functions to hash and re-hash the result of any hashable object's built-in __hash__ value, put into string form.  This should not necessarily be trusted to give an optimal distribution of hash values, and for specific use cases of bloom filters, it will often be a good idea to create a subclass of Bloomfilter, with a more implemntation-specific hashing scheme for the add() and contains() methods.
 
         INPUT:
-            -s -- a string, to add to self
+            -n -- a hashable object, to add to self
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=0.25)
+            sage: a.add(5); a
+            Bloomfilter(size=16, hash_count=3, max_fp_rate=0.250000, bits=0000100000000100)
+            
+            sage: a.add(5); a.add(5); a.add(5); a
+            Bloomfilter(size=16, hash_count=3, max_fp_rate=0.250000, bits=0000100000000100)
+            
+            sage: a.add("skateboard"); a
+            Bloomfilter(size=16, hash_count=3, max_fp_rate=0.250000, bits=0000100010000101)
         """
         if isinstance(n, basestring):
             # have a string - just hash it each time
             for i in range(self.hash_count):
-                hash_val = mmh3.hash(n,i) % self.size
+                hash_val = mmh3.hash(n,i) % self.size # uses the i-th murmur hash function - thereby providing necessary multiple hash functions
                 self.bits.add(hash_val)
         elif isinstance(n, collections.Hashable):
             # have a hashable non-string; take first hash, then continually re-hash str(previous hash)
