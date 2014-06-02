@@ -10,8 +10,8 @@ class Bloomfilter(object):
     Further, note that due to the bit vector representation, intersection, difference, symmetric difference are all meaningless in the context of a bloom filter.  As such, only insertion and union operations are the only possible set behaviors, in addition to membership testing.
     
     A sample use of a Bloomfilter is for file-tree caching.  For example, a massive amount of files may be stored in a data warehouse.  A user may want to query this warehouse to see if a given file is contained.  It would be impossible to store all of the filenames in memory, and thus, they must simply be stored on disk.  Rather than having to go to disk every single time a lookup is performed (which is several orders of magnitude slower than holding the names in memory), a Bloomfilter can be used as a "pre-filter".  That is, all of the filenames can be 'stored' in the filter efficiently, and we can test for membership of filenames with high accuracy.  If a filename is indicated as "maybe present" then we will have to access the file by reading it off disk anyway.  However, if a filename is indicated as "definitely not present", then we save all of the time of checking if the file is on disk, which is a huge speedup.
-
     """
+    
     def __init__(self, size, max_fp_rate, hash_count, iterable=None):
         """
         Initializes a new bloom filter.  If an iterable is provided, then the filter will be initialized with each of the iterable's elements as added members, otherwise the filter will be empty.
@@ -425,14 +425,31 @@ class Bloomfilter(object):
             (e^(-1/4) - 1)^2
         """
         return (1 - e^(-self.hash_count * self.num_inserts / self.size))^self.hash_count
+   
+    @staticmethod
+    def optimal_hash_count(m, n):
+        """
+        Computes the optimal number of hash functions to use in a bloom filter, for a given bit vector size m and expected number of element insertions n.  The value is calculated via the expression (m/n)*ln(2), where ln is the natural logarithm; this value is rounded to the nearest integer value, which is returned.  If the rounded value is 0, then 1 is returned.
+        
+        INPUT:
+            -m -- an integer, the number of bits in the bloom filter
+            -n -- an integer, the expected number of element insertions
+            
+        OUTPUT:
+            an integer, the (rounded) optimal number of hash functions to use
+            
+        EXAMPLES::
+            sage: Bloomfilter.optimal_hash_count(500, 100)
+            3
+            
+            sage: Bloomfilter.optimal_hash_count(10,5)
+            1
+        """
+        res = round((m/n) * ln(2))
+        return res if res > 0 else 1
 
         """
     TODO:
         * pickling
         * re-hash boolean once FP is exceeded
-
-    Answers:
-        * implement subclass specific for a project (override, use murmurs)
-        * document fact that you can't delete members (they don't exist), sample GOOD uses, sample BAD uses
-        * re-hash yes (default), no option
    """
