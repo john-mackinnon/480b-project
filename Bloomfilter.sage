@@ -28,14 +28,15 @@ class Bloomfilter(object):
         self.size = size
         self.max_fp_rate = max_fp_rate
         self.hash_count = hash_count
+        self.num_inserts = 0 # used for false-positive probability calculations
 
     def __repr__(self):
         """
         Returns a string representing the given bloom filter.  The following information is included in this string: capacity of the underlying bit set, number of hash functions used, maximum allowed false-positive rate, and the underlying bitset itself.
         
         EXAMPLES::
-            sage: Bloomfilter(size=128, max_fp_rate=0.25, hash_count=4)            
-            Bloomfilter(size=128, hash_count=4, max_fp_rate=0.250000, bits=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
+            sage: Bloomfilter(size=8, max_fp_rate=0.25, hash_count=4)            
+            Bloomfilter(size=8, hash_count=4, max_fp_rate=0.250000, bits=00000000)
         """
         return "Bloomfilter(size=%i, hash_count=%i, max_fp_rate=%f, bits=%s)" % (self.size, self.hash_count, self.max_fp_rate, repr(self.bits))
 
@@ -235,6 +236,8 @@ class Bloomfilter(object):
         Inserts hashable object n into self.  Note that n is not retrievable in the future (as only the bits resulting from the hash of n are retained), but, following the insertion, self will always return true when testing n for membership.
         
         Note that the current implementation of the hashing scheme has NOT been tested for a uniform spread for non-string objects.  That is, for strings that are added, the set of murmur hash functions is used to hash the string.  Murmur has been shown to possess good distribution over random strings, and may thus be trusted to do so for added strings in the bloom filter.  However, murmur operates on strings, and no general-purpose hash function was found that both works on any hashable object type, and allows for multiple hash functions (similar to how murmur may be seeded).  The current implementation of Bloomfilter then, uses the set of murmur hash functions to hash and re-hash the result of any hashable object's built-in __hash__ value, put into string form.  This should not necessarily be trusted to give an optimal distribution of hash values, and for specific use cases of bloom filters, it will often be a good idea to create a subclass of Bloomfilter, with a more implemntation-specific hashing scheme for the add() and contains() methods.
+        
+        Note that the add() method works on an element-wise basis.  If the contents of a collection are to be added to a filter, then they must each be added individually.
 
         INPUT:
             -n -- a hashable object, to add to self
@@ -263,6 +266,9 @@ class Bloomfilter(object):
                 self.bits.add(last_hash)
         else:
             raise TypeError("unhashable type: '%s'" % n.__class__.__name__)
+        # increment number of inserted elements - for false-positive estimation purposes
+        self.num_inserts += 1
+        
 
     def union(self, other):
         """
@@ -395,29 +401,28 @@ class Bloomfilter(object):
 
     def expectedFp(self):
         """
-        Returns the expected false-positive rate for membership testing in self. This rate is calculated by ________.  Note that this value is based on the size of the underlying bit vector, the number of set bits, and the number of hash functions used for the filter.  For the pure size of the vector, or number of set bits, see getVectorSize and getLoadFactor.
+        Returns the expected false-positive probability for membership testing in self. If we let k be the number of hash functions used, m be the size of self's underlying bit vector, and n b the number of elements added to self, then this rate is estimated to be (1 - e^(-kn/m))^k, where e is the base of the natural logarithm.  This probability assumes that the hash functions used are well distributed (see the add() method for more information).  Note that this value is based on the size of the underlying bit vector, the number of set bits, and the number of hash functions used for the filter; for the pure size of the vector, or number of set bits, see getVectorSize() and getLoadFactor().
+        
+        Note that the function returns an exact representation of the expected probability; if an approximation is desired, the user may simply wrap the returned result (e.g. float(a.expectedFp())).
 
         OUTPUT:
             a decimal, the expected rate of false positivies for self
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a.add(4)
+            sage: a.expectedFp()
+            (e^(-1/4) - 1)^2
         """
-        return
+        return (1 - e^(-self.hash_count * self.num_inserts / self.size))^self.hash_count
 
         """
     TODO:
         * pickling
-        * testing
         * re-hash boolean once FP is exceeded
-        * test efficiency in add/contains:
-            * add(n) flips the nth bit, update(set) flips all bits
-            * 'n in set' tests membership, issuperset(set) checks if all flipped
-    Questions:
-        * what to do with max-fp?
 
     Answers:
-        * test hash() vs. using murmur (re-hashing hash()) - use __hash__
         * implement subclass specific for a project (override, use murmurs)
-        * repr = "Bloomfilter: <some field information"
-        * mightContain function (so user can choose)
         * document fact that you can't delete members (they don't exist), sample GOOD uses, sample BAD uses
         * re-hash yes (default), no option
    """
