@@ -1,4 +1,5 @@
 import mmh3
+import collections
 
 class Bloomfilter(object):
     """
@@ -168,19 +169,26 @@ class Bloomfilter(object):
                 return False
         return True
 
-    def add(self, s):
+    def add(self, n):
         """
         Inserts string s into self.  Note that n is not retrievable in the future, but, following the insertion, self will always return true when testing s for membership.
 
         INPUT:
             -s -- a string, to add to self
         """
-        self.bits.add(hash(s) % self.size)
-        """
-        for i in self.hash_count:
-            hash_val = mmh3.hash(s,i) % self.size
-            self.bits.add(hash_val)
-        """
+        if isinstance(n, basestring):
+            # have a string - just hash it each time
+            for i in range(self.hash_count):
+                hash_val = mmh3.hash(n,i) % self.size
+                self.bits.add(hash_val)
+        elif isinstance(n, collections.Hashable):
+            # have a hashable non-string; take first hash, then continually re-hash str(previous hash)
+            last_hash = hash(n)
+            for i in range(self.hash_count):
+                last_hash = mmh3.hash(str(last_hash),i) % self.size
+                self.bits.add(last_hash)
+        else:
+            raise TypeError("unhashable type: '%s'" % n.__class__.__name__)
 
     def union(self, other):
         """
