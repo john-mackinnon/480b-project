@@ -427,6 +427,27 @@ class Bloomfilter(object):
         return (1 - e^(-self.hash_count * self.num_inserts / self.size))^self.hash_count
    
     @staticmethod
+    def optimal_size(p, n):
+        """
+        Computes the optimal size to be used for the underlying bit vector in a bloom filter, for a given maximum false-positive rate p and expected number of element insertions n.  The value is calculated via the expression -(n*ln(p))/(ln(2)^2), where ln is the natural logarithm; this value is rounded to the nearest integer value, which is returned.  If the rounded value is 0, then 1 is returned.
+        
+        Note that if a user wishes to use a bloom filter with arbitrarily poor membership-testing accuracy (i.e. a maximum allowed false positive rate of 1.0), then the results of this function should not be used to determine the size of the bloomfilter.  That is, the result will be rounded to 1, which renders the bloom filter completely useless.
+        
+        INPUT:
+            -p -- a decimal, the desired maximum false-positive rate
+            -n -- an integer, the expected number of element insertions
+            
+        OUTPUT:
+            an integer, the (rounded) optimal size to use in the underlying bit vector for a bloom filter
+            
+            EXAMPLES::
+                sage: Bloomfilter.optimal_size(0.5, 100)
+                144
+        """
+        res = round(- (n * ln(p))/(ln(2))^2)
+        return res if res > 0 else 1
+    
+    @staticmethod
     def optimal_hash_count(m, n):
         """
         Computes the optimal number of hash functions to use in a bloom filter, for a given bit vector size m and expected number of element insertions n.  The value is calculated via the expression (m/n)*ln(2), where ln is the natural logarithm; this value is rounded to the nearest integer value, which is returned.  If the rounded value is 0, then 1 is returned.
