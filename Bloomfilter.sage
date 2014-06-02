@@ -338,8 +338,22 @@ class Bloomfilter(object):
 
         OUTPUT:
             a bloom filter, the shallow copy of self
+            
+        EXAMPLES::
+            sage: import copy
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a.add(4)
+            sage: b = copy.copy(a)
+            sage: b == a
+            True
+            
+            sage: a.add(5)
+            sage: a.add(6)
+            sage: b == a
+            True
         """
-        copy = Bloomfilter(max_fp_rate = self.max_fp_rate,
+        copy = Bloomfilter(size = self.size,
+                           max_fp_rate = self.max_fp_rate,
                            hash_count = self.hash_count)
         copy.bits = self.bits
         return copy
@@ -353,10 +367,25 @@ class Bloomfilter(object):
 
         OUTPUT:
             a bloom filter, the deep copy of self
+            
+        EXAMPLES::
+            sage: import copy
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a.add(4)
+            sage: b = copy.deepcopy(a)
+            sage: b == a
+            True
+            
+            sage: a.add(5)
+            sage: a.add(6)
+            sage: b == a
+            False
         """
-        copy = Bloomfilter(max_fp_rate = self.max_fp_rate,
-                           iterable = self.bits,
+        copy = Bloomfilter(size = self.size,
+                           max_fp_rate = self.max_fp_rate,
                            hash_count = self.hash_count)
+        for i in self.bits:
+            copy.bits.add(i)
         return copy
 
     def expectedFp(self):
