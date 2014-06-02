@@ -243,8 +243,26 @@ class Bloomfilter(object):
 
         OUTPUT:
             a bloom filter, the union of other and self
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a.add(5)
+            sage: a
+            Bloomfilter(size=8, hash_count=2, max_fp_rate=0.250000, bits=00001100)
+
+            sage: b = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: b.add("skateboard")
+            sage: b
+            Bloomfilter(size=8, hash_count=2, max_fp_rate=0.250000, bits=10000001)
+                    
+            sage: a.union(b)
+            Bloomfilter(size=8, hash_count=2, max_fp_rate=0.250000, bits=10001101)
         """
-        return
+        if not isinstance(other, Bloomfilter):
+            raise TypeError("may not union Bloomfilter with object of type: '%s'" % other.__class__.__name__)
+        res = Bloomfilter(size=self.size, max_fp_rate=self.max_fp_rate, hash_count=self.hash_count)
+        res.bits = self.bits.union(other.bits)
+        return res
 
     def getVectorSize(self):
         """
