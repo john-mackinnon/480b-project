@@ -319,13 +319,22 @@ class Bloomfilter(object):
         Note that the expectedFp function returns a more descriptive statistic (i.e. how often you may expect false positives), but the load factor returns a value that is completely independent of the number of hash functions used.
 
         OUTPUT:
-            a decimal, the number of set bits in the underlying bit vector, divided by the total size of the vector
+            a number, the number of set bits in the underlying bit vector divided by the total size of the vector
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a.getLoadFactor()
+            0
+            
+            sage: a.add(4)
+            sage: a.getLoadFactor()
+            1/4
         """
         return sum([1 for _ in self.bits]) / self.size
 
     def __copy__(self):
         """
-        Returns a shallow copy of self.  Note that the underlying bit vector in the returned copy is simply a reference to the vector in self, so changes to one will affect the other.
+        Returns a shallow copy of self.  Note that the underlying bit vector in the returned copy is simply a reference to the vector in self, so changes to one (i.e. the addition of any new members to the filter) will affect the other.
 
         OUTPUT:
             a bloom filter, the shallow copy of self
