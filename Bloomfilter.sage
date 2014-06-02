@@ -300,6 +300,15 @@ class Bloomfilter(object):
 
         OUTPUT:
             an integer, representing the total number of buckets in self's underlying bit vector
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a.getVectorSize()
+            8
+            
+            sage: b = Bloomfilter(size=1024, hash_count=2, max_fp_rate=0.25)
+            sage: b.getVectorSize()
+            1024
         """
         return self.size
 
