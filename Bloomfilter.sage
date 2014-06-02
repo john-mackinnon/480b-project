@@ -3,18 +3,21 @@ import collections
 
 class Bloomfilter(object):
     """
-    A bloom filter is a probabilistic data structure used for membership testing.  Objects added to a bloom filter are not actually stored in the filter; rather, each added object is hashed several times, and the corresponding bits are set in a bit vector.  When an object is tested for membership, it is hashed by the same hash functions, and the resulting bits are checked in the bit vector.  If all corresponding bits are set, it is said that the element "may" have been added to the filter; if at least one of the bits is not set, however, it is definitely the case that the object is not a member of the filter.  Note that, in this way, a bloom filter may return false positives for membership testing, but will never produce false negatives.  That is, a bloom filter should be used when it is desirable to know with some degree of certainty that an object "might" be a member, and with absolute certainty that an object is not a member.
+    A bloom filter is a probabilistic data structure used for membership testing.  Objects added to a bloom filter are not actually stored in the filter; rather, each added object is hashed several times, and the corresponding bits are set in an underlying bit vector.  When an object is tested for membership, it is hashed by the same hash functions, and the resulting bits are checked in the bit vector.  If all corresponding bits are set, it is said that the element "may" have been added to the filter; if at least one of the bits is not set, however, it is definitely the case that the object is not a member of the filter.  Note that, in this way, a bloom filter may return false positives for membership testing, but will never produce false negatives.  That is, a bloom filter should be used when it is desirable to know with some degree of certainty that an object "might" be a member, and with absolute certainty that an object is not a member.
 
-    Note that, due to the use of a bit vector to represent the underlying data, it is not possible to retrieve the members added to a filter (nor to iterate, remove, etc.).  If retrievability is desired, or if false positives are not tolerated, a user would be better suited using the builtin set type in python.  However, these concessions allow for extremely space efficient storage (linear in the size of the bit vector), as well as fast lookup (linear in the number of hash functions used - regardless of the number of added members).  Bloomfilters are often effectively used as a pre-screening measure, with a traditional set containing all members stored on disk.
+    Note that, due to the use of a bit vector to represent the underlying data, it is not possible to retrieve the members added to a filter (nor to iterate, remove, etc.).  If retrievability is desired, or if false positives are not tolerated, a user would be better suited using the builtin set type in python.  However, these concessions allow for extremely space efficient storage (linear - with a small constant - in the size of the bit vector), as well as fast lookup (linear in the number of hash functions used - regardless of the number of added members).  Bloomfilters are often effectively used as a pre-screening measure, with a traditional set containing all members stored on disk.
     
-    Further, note that due to the bit vector representation, intersection, difference, symmetric difference are all meaningless in the context of a bloom filter.  As such, only insertion and union operations are the only possible set behaviors, in addition to membership testing.
+    Further, note that due to the bit vector representation, intersection, difference, and symmetric difference are all meaningless in the context of a bloom filter.  As such, insertion and union operations are the only possible set behaviors, in addition to membership testing.
     
     A sample use of a Bloomfilter is for file-tree caching.  For example, a massive amount of files may be stored in a data warehouse.  A user may want to query this warehouse to see if a given file is contained.  It would be impossible to store all of the filenames in memory, and thus, they must simply be stored on disk.  Rather than having to go to disk every single time a lookup is performed (which is several orders of magnitude slower than holding the names in memory), a Bloomfilter can be used as a "pre-filter".  That is, all of the filenames can be 'stored' in the filter efficiently, and we can test for membership of filenames with high accuracy.  If a filename is indicated as "maybe present" then we will have to access the file by reading it off disk anyway.  However, if a filename is indicated as "definitely not present", then we save all of the time of checking if the file is on disk, which is a huge speedup.
+    
+    
+    This is a first implementation of a bloom filter in sage, and thus is not a mature data structure yet.  Future improvements include: the ability to pickle and unpickle a filter, and subclasses/variations that allow for counting in bloom filters (http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.91.6328), and scalabling bloom filters once the maximum false positive rate has been exceeded (http://gsd.di.uminho.pt/members/cbm/ps/dbloom.pdf).
     """
     
     def __init__(self, size, max_fp_rate, hash_count, iterable=None):
         """
-        Initializes a new bloom filter.  If an iterable is provided, then the filter will be initialized with each of the iterable's elements as added members, otherwise the filter will be empty.
+        Initializes a new bloom filter.  If an iterable is provided, then the filter will be initialized with each of the iterable's elements as added members, otherwise the filter will be empty.  Note that it is possible that adding all of the elements of the iterable may cause the filter to already exceed its maximum allowed false-positive rate, depending on the other parameters; an error will be thrown in this case.
         
         The max_fp_rate parameter sets an upper limit for the allowed expected probability of false-positives for membership testing; upon exceeding this value, an error will be thrown by the add() function.  Thus, a larger max_fp_rate value will allow for the addition of more elements into a smaller filter, but comes at the cost of reliability of membership testing.  If a user wishes to use a bloom filter with arbitrarily poor membership-testing accuracy, a value of 1.0 can be given as the max_fp_rate (i.e. allowing for a 100% estimated probability of false-positives).
         
@@ -477,9 +480,3 @@ class Bloomfilter(object):
         """
         res = round((m/n) * ln(2))
         return res if res > 0 else 1
-
-        """
-    TODO:
-        * pickling
-        * re-hash boolean once FP is exceeded
-   """
