@@ -38,7 +38,10 @@ class Bloomfilter(object):
         # add all elements if non-empty iterable is given 
         if (iterable is not None):
             for elmt in iterable:
-                self.add(elmt)
+                try:
+                    self.add(elmt)
+                except ValueError:
+                    raise ValueError("maximum allowed false positive rate does not allow for all elements in iterable to be added")
 
     def __repr__(self):
         """
@@ -177,7 +180,7 @@ class Bloomfilter(object):
             a boolean, indicating if n is possibly a member of self
             
         EXAMPLES::
-            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=128, hash_count=3, max_fp_rate=0.25)
             sage: a.add(5)
             sage: 5 in a
             True
@@ -224,7 +227,7 @@ class Bloomfilter(object):
             a boolean, indicating if n is possibly a member of self
             
         EXAMPLES::
-            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=128, hash_count=3, max_fp_rate=0.25)
             sage: a.add(5)
             sage: a.mightContain(5)
             True
@@ -253,15 +256,15 @@ class Bloomfilter(object):
             -n -- a hashable object, to add to self
             
         EXAMPLES::
-            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=1.0)
             sage: a.add(5); a
-            Bloomfilter(size=16, hash_count=3, max_fp_rate=0.250000, bits=0000100000000100)
+            Bloomfilter(size=16, hash_count=3, max_fp_rate=1.000000, bits=0000100000000100)
             
             sage: a.add(5); a.add(5); a.add(5); a
-            Bloomfilter(size=16, hash_count=3, max_fp_rate=0.250000, bits=0000100000000100)
+            Bloomfilter(size=16, hash_count=3, max_fp_rate=1.000000, bits=0000100000000100)
             
             sage: a.add("skateboard"); a
-            Bloomfilter(size=16, hash_count=3, max_fp_rate=0.250000, bits=0000100010000101)
+            Bloomfilter(size=16, hash_count=3, max_fp_rate=1.000000, bits=0000100010000101)
         """
         if isinstance(n, basestring):
             # have a string - just hash it each time
@@ -278,6 +281,9 @@ class Bloomfilter(object):
             raise TypeError("unhashable type: '%s'" % n.__class__.__name__)
         # increment number of inserted elements - for false-positive estimation purposes
         self.num_inserts += 1
+        # check to insure that insertion does not cause maximum false-positive rate to be exceeeded
+        if (self.expected_fp() > self.max_fp_rate):
+            raise ValueError("insertion causes maximum fp rate to be exceeded")
         
 
     def union(self, other):
@@ -295,24 +301,27 @@ class Bloomfilter(object):
             a bloom filter, the union of other and self
             
         EXAMPLES::
-            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=1.0)
             sage: a.add(5)
             sage: a
-            Bloomfilter(size=8, hash_count=2, max_fp_rate=0.250000, bits=00001100)
+            Bloomfilter(size=8, hash_count=2, max_fp_rate=1.000000, bits=00001100)
 
-            sage: b = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: b = Bloomfilter(size=8, hash_count=2, max_fp_rate=1.0)
             sage: b.add("skateboard")
             sage: b
-            Bloomfilter(size=8, hash_count=2, max_fp_rate=0.250000, bits=10000001)
+            Bloomfilter(size=8, hash_count=2, max_fp_rate=1.000000, bits=10000001)
                     
             sage: a.union(b)
-            Bloomfilter(size=8, hash_count=2, max_fp_rate=0.250000, bits=10001101)
+            Bloomfilter(size=8, hash_count=2, max_fp_rate=1.000000, bits=10001101)
         """
         if not isinstance(other, Bloomfilter):
             raise TypeError("may not union Bloomfilter with object of type: '%s'" % other.__class__.__name__)
         new_size = max(self.size, other.size)
         res = Bloomfilter(size=new_size, max_fp_rate=self.max_fp_rate, hash_count=self.hash_count)
         res.bits = self.bits.union(other.bits)
+        # insure that maximum allowed false-positive rate has not been exceeded
+        if (res.expected_fp() > res.max_fp_rate):
+            raise ValueError("maximum allowed false-positive rate is exceeded by union")
         return res
 
     def getVectorSize(self):
@@ -343,7 +352,7 @@ class Bloomfilter(object):
             a number, the number of set bits in the underlying bit vector divided by the total size of the vector
             
         EXAMPLES::
-            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=1.000000)
             sage: a.getLoadFactor()
             0
             
@@ -362,7 +371,7 @@ class Bloomfilter(object):
             
         EXAMPLES::
             sage: import copy
-            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=1.0)
             sage: a.add(4)
             sage: b = copy.copy(a)
             sage: b == a
@@ -391,7 +400,7 @@ class Bloomfilter(object):
             
         EXAMPLES::
             sage: import copy
-            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=1.0)
             sage: a.add(4)
             sage: b = copy.deepcopy(a)
             sage: b == a
@@ -419,7 +428,7 @@ class Bloomfilter(object):
             a decimal, the expected rate of false positivies for self
             
         EXAMPLES::
-            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=0.25)
+            sage: a = Bloomfilter(size=8, hash_count=2, max_fp_rate=1.0)
             sage: a.add(4)
             sage: a.expected_fp()
             (e^(-1/4) - 1)^2
