@@ -151,23 +151,54 @@ class Bloomfilter(object):
         else:
             return NotImplemented
 
-    def __contains__(self, s):
+    def __contains__(self, n):
         """
-        Tests for possible membership of the string s in self.  Note that "true" only means s is probabilistically a member of self, though this may not be the case; a "false", however, indicates with absolute certainty that s is not a member of self.
+        Tests for possible membership of the hashable object n in self.  Note that "true" only means n is probabilistically a member of self, though this may not be the case; a "false", however, indicates with absolute certainty that n is not a member of self.
+        
+        Membership testing is meant to be carried out in exactly the same fashion as adding (though now hashed buckets are checked for a set bit, rather than performing the setting of the bit).  For any questions regarding the methodology used in membership testing, see documentation of add() for more details.
+        
+        Further, note that the behavior of the __contains__ function is exactly identical to the mightContain() function.  This is to allow the user to use whatever style of membership testing they prefer in their code.  "x in y" syntax (from __contains__) is preferable for elegance, but "y.mightContain(x)" might provide a more clear indication that membership testing is only probabilistic.
 
         INPUT:
-            -s -- a string, to test for membership in self
+            -n -- an object, to test for membership in self
 
         OUTPUT:
             a boolean, indicating if n is possibly a member of self
+            
+        EXAMPLES::
+            sage: a = Bloomfilter(size=16, hash_count=3, max_fp_rate=0.25)
+            sage: a.add(5)
+            sage: 5 in a
+            True
+           
+            sage: a.add("skateboard")
+            sage: "skateboard" in a
+            True
+            
+            sage: 6 in a
+            False
+            
+            sage: set() in a
+            False
         """
-        if not isinstance(s, string):
-            raise TypeError("Bloomfilters may only test strings for membership")
-        for i in self.hash_count:
-            hash_val = mmh3.hash(s,i) % self.size
-            if not hash_val in self.bits:
-                return False
-        return True
+        if isinstance(n, basestring):
+            # have a string - just use murmur hash on string itself
+            for i in range(self.hash_count):
+                hash_val = mmh3.hash(n,i) % self.size
+                if not hash_val in self.bits:
+                    return False
+            return True 
+        elif isinstance(n, collections.Hashable):
+            # have a hashable non-string; take first hash, then continually re-hash str(previous hash)
+            last_hash = hash(n)
+            for i in range(self.hash_count):
+                last_hash = mmh3.hash(str(last_hash),i) % self.size
+                if not last_hash in self.bits:
+                    return False
+            return True
+        else:
+            # have a non-hashable object, cannot possibly be in filter (see add())
+            return False
 
     def add(self, n):
         """
