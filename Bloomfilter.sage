@@ -266,7 +266,11 @@ class Bloomfilter(object):
 
     def union(self, other):
         """
-        Returns a new Bloomfliter representing the union of the underlying bit vectors for self, and another bloom filter, with the same max false positive rate and capacity as self.  This is semantically equivalent to taking the union of the member sets of the two filters, as any element that is a member of one will also be a member of the resulting bloom filter.
+        Returns a new Bloomfliter representing the union of the underlying bit vectors for self, and another bloom filter; this is semantically equivalent to taking the union of the member sets of the two filters, as any element that is a member of one will also be a member of the resulting bloom filter.  The returned filter will take on size equal to the maximum of self and other (as is necessary for the union-ing of the two bit vectors), and maximum allowed false positive rate and hash count equal to those of self.
+        
+        Note that, due to the adoption of self's maximum allowed false positive rate and number of hash count, it is possible that a.union(b) will not be equal to b.union(a) for two bloom filters a and b.  This allows the user the flexibility to select which filter's false positive rate and hash count are desired for the resultant bloom filter, while still guaranteeing that the underlying bit vector returned is large enough to fit the data stored in both filters.
+        
+        Further note that, if the maximum false positive rate of the resultant bloom filter is exceeded by taking the union of the two underlying bit vectors, it is possible that the vector will be resized by default in order to accommodate the underlying bit vector's saturation.  Thus, in certain cases the size of the returned filter may not be the maximum of sizes of self and other, but rather the result of a re-sizing.
 
         INPUT:
             -other -- a bloom filter, to union with self
@@ -290,7 +294,8 @@ class Bloomfilter(object):
         """
         if not isinstance(other, Bloomfilter):
             raise TypeError("may not union Bloomfilter with object of type: '%s'" % other.__class__.__name__)
-        res = Bloomfilter(size=self.size, max_fp_rate=self.max_fp_rate, hash_count=self.hash_count)
+        new_size = max(self.size, other.size)
+        res = Bloomfilter(size=new_size, max_fp_rate=self.max_fp_rate, hash_count=self.hash_count)
         res.bits = self.bits.union(other.bits)
         return res
 
